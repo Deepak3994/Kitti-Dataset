@@ -1,5 +1,7 @@
 #!/bin/bash
 
+process_max=5
+
 files=(2011_09_26_calib.zip
 2011_09_26_drive_0001
 2011_09_26_drive_0002
@@ -162,17 +164,28 @@ files=(2011_09_26_calib.zip
 2011_10_03_drive_0047
 2011_10_03_drive_0058)
 
-for i in ${files[@]}; do
-        if [ ${i:(-3)} != "zip" ]
+download_file () {
+    local in_file=$1
+    echo $in_file
+    if [ ${in_file:(-3)} != "zip" ]
         then
-                shortname=$i'_sync.zip'
-                fullname=$i'/'$i'_sync.zip'
+            shortname=$in_file'_sync.zip'
+            fullname=$in_file'/'$in_file'_sync.zip'
         else
-                shortname=$i
-                fullname=$i
+            shortname=$in_file
+            fullname=$in_file
         fi
 	echo "Downloading: "$shortname
         wget 'https://s3.eu-central-1.amazonaws.com/avg-kitti/raw_data/'$fullname
         unzip -o $shortname
         rm $shortname
+}
+
+p_count=0
+for i in ${files[@]}; do
+    download_file $i &
+    if (( ++p_count == $process_max )); then
+        wait
+        p_count=0
+    fi
 done
